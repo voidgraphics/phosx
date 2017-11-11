@@ -2,7 +2,7 @@
   "name": "lifx",
   "version": "0.0.0",
   "author": "Adrien Leloup <adrien@whitecube.be>",
-  "description": "An electron-vue project",
+  "description": "An app to control LIFX lights with your TouchBar",
   "license": null,
   "main": "./dist/electron/main.js",
   "scripts": {
@@ -18,7 +18,7 @@
   },
   "build": {
     "productName": "lifx",
-    "appId": "org.simulatedgreg.electron-vue",
+    "appId": "com.voidgraphics.lifx",
     "directories": {
       "output": "build"
     },

@@ -1,28 +1,35 @@
 <template>
   <div id="wrapper">
-    <img id="logo" src="~@/assets/logo.png" alt="electron-vue">
+    <div class="dragbar"></div>
     <main>
-      <div class="left-side">
+      <a href="#" @click.prevent="showConfig = !showConfig">Config</a>
+      <div class="left-side doc" v-show="showConfig">
         <span class="title">
-          Welcome to your new project!
+          Control your LIFX lights!
         </span>
-        <system-information></system-information>
+        <input class="input input--text" type="text" placeholder="Paste your LIFX authorization token here" v-model="token">
+        <button class="button" @click.prevent="connect">Connect</button>
+        <p class="error" v-if="error">Error</p>
       </div>
 
       <div class="right-side">
         <div class="doc">
-          <div class="title">Getting Started</div>
-          <p>
-            electron-vue comes packed with detailed documentation that covers everything from
-            internal configurations, using the project structure, building your application,
-            and so much more.
-          </p>
-          <button @click="open('https://simulatedgreg.gitbooks.io/electron-vue/content/')">Read the Docs</button><br><br>
-        </div>
-        <div class="doc">
-          <div class="title alt">Other Documentation</div>
-          <button class="alt" @click="open('https://electron.atom.io/docs/')">Electron</button>
-          <button class="alt" @click="open('https://vuejs.org/v2/guide/')">Vue.js</button>
+          <div>
+            <h1 class="title">Connected: {{ isConnected }}</h1>
+
+          </div>
+          <div class="lights">
+            <div class="light" v-for="light in lights">
+              <h2 class="title alt">{{ light.label }}</h2>
+              <p>Power: {{ light.power }}</p>
+              <p>Brightness: {{ light.brightness }}</p>
+              <div v-if="light.color">
+                <p>Hue: {{ light.color.hue }}</p>
+                <p>Kelvin: {{ light.color.kelvin }}</p>
+                <p>Saturation: {{ light.color.saturation }}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -30,14 +37,95 @@
 </template>
 
 <script>
-  import SystemInformation from './LandingPage/SystemInformation'
+  import {ipcRenderer} from 'electron'
 
   export default {
     name: 'landing-page',
-    components: { SystemInformation },
+    data() {
+      return {
+        lights: [],
+        showConfig: false,
+        color: 'blue',
+        brightness: 0.5,
+        error: false,
+        isConnected: false,
+        token: ''
+      }
+    },
+    mounted() {
+      ipcRenderer.on('color-picker', (e, color) => {
+        this.color = color
+        this.changeColor(color, this.brightness)
+      })
+      ipcRenderer.on('brightness', (e, brightness) => {
+        this.brightness = brightness
+        this.changeColor(null, this.brightness)
+      })
+      if(this.token) {
+        this.refreshData()
+        this.getScenes()
+      }
+    },
     methods: {
-      open (link) {
-        this.$electron.shell.openExternal(link)
+      connect() {
+        this.refreshData();
+      },
+
+      refreshData() {
+        fetch('https://api.lifx.com/v1/lights/all', {
+          headers: {
+            'Authorization': 'Bearer ' + this.token
+          }
+        })
+        .then((response) => {
+          this.isConnected = response.status == 200
+          if(response.status != 200) {
+            console.error(response)
+            this.error = true
+          }
+          return response.json()
+        })
+        .then((json) => {
+          this.lights = json
+        })
+      },
+
+      getScenes() {
+        fetch('https://api.lifx.com/v1/scenes', {
+          headers: this.authHeader
+        })
+        .then((response) => {
+          if(response.status != 200) {
+            console.error(response)
+            this.error = true
+          }
+          return response.json()
+        })
+        .then((json) => {
+          console.log(json)
+          this.scenes = json
+        })
+      },
+
+      changeColor(color, brightness) {
+        console.log('changing color', color, brightness)
+        this.$http({
+          method: 'put',
+          url: 'https://api.lifx.com/v1/lights/all/state',
+          headers: this.authHeader,
+          data: { color, brightness }
+        })
+        .then((response) => {
+          this.refreshData()
+        })
+      }
+    },
+
+    computed: {
+      authHeader() {
+        return {
+          'Authorization': 'Bearer ' + this.token
+        }
       }
     }
   }
@@ -53,6 +141,15 @@
   }
 
   body { font-family: 'Source Sans Pro', sans-serif; }
+
+  .dragbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    -webkit-app-region: drag;
+  }
 
   #wrapper {
     background:
@@ -82,6 +179,7 @@
   .left-side {
     display: flex;
     flex-direction: column;
+    padding-right: 25px;
   }
 
   .welcome {
@@ -90,11 +188,26 @@
     margin-bottom: 10px;
   }
 
+  .light {
+    margin-bottom: 35px;
+  }
+
   .title {
     color: #2c3e50;
     font-size: 20px;
     font-weight: bold;
-    margin-bottom: 6px;
+    margin-bottom: 15px;
+  }
+
+  .input {
+    padding: 15px 20px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    margin-bottom: 25px;
+  }
+
+  .input:focus {
+    outline: none;
   }
 
   .title.alt {
@@ -105,6 +218,11 @@
   .doc p {
     color: black;
     margin-bottom: 10px;
+  }
+
+  .doc p.error {
+    color: #fc4500;
+    margin-top: 25px;
   }
 
   .doc button {
