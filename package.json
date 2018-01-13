@@ -1,5 +1,5 @@
 {
-  "name": "lifx",
+  "name": "phosx",
   "version": "0.0.0",
   "author": "Adrien Leloup <adrien@whitecube.be>",
   "description": "An app to control LIFX lights with your TouchBar",
@@ -17,8 +17,8 @@
     "postinstall": ""
   },
   "build": {
-    "productName": "lifx",
-    "appId": "com.voidgraphics.lifx",
+    "productName": "phosx",
+    "appId": "com.voidgraphics.phosx",
     "directories": {
       "output": "build"
     },
@@ -79,6 +79,7 @@
     "extract-text-webpack-plugin": "^3.0.0",
     "file-loader": "^0.11.2",
     "html-webpack-plugin": "^2.30.1",
+    "lodash.throttle": "^4.1.1",
     "multispinner": "^0.2.1",
     "node-loader": "^0.6.0",
     "style-loader": "^0.18.2",

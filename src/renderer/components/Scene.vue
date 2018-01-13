@@ -30,6 +30,7 @@
                     }
                 })
                 .then((response) => {
+                    window.dispatchEvent(new Event('refresh'))
                     console.log(response)
                 })
             }
@@ -47,21 +48,19 @@
 
 <style>
     .scene {
+        float: left;
+        margin-right: 40px;
+        margin-bottom: 30px;
         display: block;
         text-decoration: none;
         width: 240px;
         padding: 20px 20px 25px;
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         border-radius: 4px;
-        flex-shrink: 0;
         border: 1px solid #F5F5F5;
         color: #1F3D50;
         text-align: center;
         font-size: 14px;
         font-weight: 700;
-    }
-
-    .scene + .scene {
-        margin-left: 40px;
     }
 </style>

@@ -49,7 +49,6 @@
         },
 
         mounted() {
-            console.log(this.raw);
             this.label = this.raw.label
             this.id = this.raw.id
             this.brightness = this.raw.brightness
@@ -70,15 +69,11 @@
                         power: this.power
                     }
                 })
-                .then((response) => {
-                    console.log(response)
-                })
             }
         },
 
         watch: {
             raw(fresh) {
-                console.log(fresh)
                 this.hue = Math.round(fresh.color.hue)
                 this.brightness = fresh.brightness
                 this.saturation = fresh.color.saturation
@@ -97,7 +92,7 @@
                 return Math.round(this.saturation * 100) + '%'
             },
             hslString() {
-                return 'hsl(' + this.hue + ', ' + this.saturationPercent + ', 50%)'
+                return 'hsv(' + this.hue + ', ' + this.saturationPercent + ', '+ this.brightnessPercent +'%)'
             },
             computedColor() {
                 if(!this.color || this.power == 'off') return '#1F3D50'
@@ -115,15 +110,13 @@
 <style>
     .light {
         width: 240px;
+        float: left;
+        margin-right: 40px;
+        margin-bottom: 30px;
         padding: 20px 20px 25px;
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         border-radius: 4px;
-        flex-shrink: 0;
         border: 1px solid #F5F5F5;
-    }
-
-    .light + .light {
-        margin-left: 40px;
     }
 
     .light__name {

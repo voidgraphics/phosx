@@ -9,21 +9,24 @@
         </a>
         <div class="config__panel" v-show="showConfig">
           <label for="token">Token</label>
-          <input id="token" class="input input--text" type="text" placeholder="Paste your authorization token here" v-model="token">
+          <input id="token" class="input input--text" type="text" placeholder="Paste your authorization token" v-model="token">
           <button class="button" @click.prevent="connect">Save</button>
-          <p class="error" v-if="error">Error</p>
         </div>
       </div>
-      <section class="section">
+      <div class="tip" v-if="!isConnected">
+        <h2 class="tip__title">You are not connected</h2>
+        <p class="tip__text">Please click the icon in the top right and provide a valid token. <br>You can go to <a href="https://cloud.lifx.com/settings" @click.prevent="navigateToLifxCloud">https://cloud.lifx.com/settings</a> to generate a token for this application. <br>Remember, do not show it to anyone.</p>
+      </div>
+      <section class="section" v-if="lights.length && isConnected">
         <h2 class="section__title">Your lights</h2>
         <div class="lights">
           <light :key="key" v-for="light, key in lights" :token="token" :raw="light"></light>
         </div>
       </section>
-      <section class="section">
+      <section class="section" v-if="scenes.length && isConnected">
         <h2 class="section__title">Your scenes</h2>
         <div class="scenes">
-          <scene v-for="scene, key in scenes" :token="token" :raw="scene"></scene>
+          <scene :key="key" v-for="scene, key in scenes" :token="token" :raw="scene"></scene>
         </div>
       </section>
     </main>
@@ -34,6 +37,8 @@
   import light from './Light.vue'
   import scene from './Scene.vue'
   import {ipcRenderer} from 'electron'
+  const {shell} = require('electron')
+  import throttle from 'lodash.throttle'
 
   export default {
     name: 'landing-page',
@@ -45,10 +50,12 @@
         showConfig: false,
         error: false,
         isConnected: false,
-        token: 'c9dd764d4b8a71d3c449937f1248c1b6484074fde175b85d820ddf39bfccadcf'
+        token: ''
       }
     },
     mounted() {
+      this.token = localStorage.getItem('token');
+      window.addEventListener('refresh', () => this.refreshData())
       ipcRenderer.on('color-picker', (e, color) => {
         this.color = color
         this.changeColor(color, this.brightness)
@@ -64,7 +71,10 @@
     },
     methods: {
       connect() {
+        localStorage.setItem('token', this.token)
+        this.showConfig = false;
         this.refreshData();
+        this.getScenes()
       },
 
       refreshData() {
@@ -103,15 +113,21 @@
       },
 
       changeColor(color, brightness) {
-        this.$http({
-          method: 'put',
-          url: 'https://api.lifx.com/v1/lights/all/state',
-          headers: this.authHeader,
-          data: { color, brightness }
-        })
-        .then((response) => {
-          this.refreshData()
-        })
+        throttle(() => {
+          this.$http({
+            method: 'put',
+            url: 'https://api.lifx.com/v1/lights/all/state',
+            headers: this.authHeader,
+            data: { color, brightness }
+          })
+          .then((response) => {
+            this.refreshData()
+          })
+        }, 300)
+      },
+
+      navigateToLifxCloud() {
+        shell.openExternal('https://cloud.lifx.com/settings')
       }
     },
 
@@ -147,17 +163,15 @@
 
   #wrapper {
     background: white;
-    height: 100vh;
+    min-height: 100vh;
     padding: 60px 35px;
     position: relative;
-    width: 100vw;
   }
 
   .lights,
   .scenes {
-    display: flex;
-    overflow-x: scroll;
     padding-bottom: 25px;
+    
   }
 
   .input {
@@ -180,6 +194,12 @@
     margin-bottom: 25px;
   }
 
+  .section:after {
+    content: '';
+    display: block;
+    clear: left;
+  }
+
   .section__title {
     font-weight: 700;
     font-size: 20px;
@@ -187,12 +207,20 @@
     color: #1F3D50;
   }
 
+  .config {
+    position: fixed;
+    top: 60px;
+  }
+
   .config__trigger {
     text-decoration: none;
     font-size: 14px;
     color: rgba(31, 61, 80, 0.2);
-    position: absolute;
+    position: fixed;
     right: 35px;
+    padding: 12px 22px;
+    border-radius: 4px;
+    background: white;
     transition: color 300ms ease-out;
   }
 
@@ -207,4 +235,57 @@
   }
 
   .config__svg .a{fill:none;stroke:#1f3d50;stroke-linecap:round;stroke-linejoin:round;stroke-width:2px;}
+
+  .config__panel {
+    position: fixed;
+    top: 60px;
+    width: 260px;
+    right: 100px;
+    background: white;
+    padding: 20px;
+    border-radius: 4px;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid #F0F0F0;
+  }
+
+  .config__panel label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+
+  .config__panel .input {
+    margin-bottom: 15px;
+    width: 100%;
+  }
+
+  .config__panel .button {
+    display: block;
+    text-align: center;
+    border: none;
+    width: 100%;
+    background: #577DFF;
+    color: white;
+    border-radius: 4px;
+    padding: 12px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .config__panel .button:focus {
+    outline: none;
+  }
+
+  .tip {
+    text-align: center;
+    margin-top: 180px;
+  }
+
+  .tip__title {
+    margin-bottom: 15px;
+  }
+
+  .tip__text {
+    line-height: 1.5;
+  }
 </style>
