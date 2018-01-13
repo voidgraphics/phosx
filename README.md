@@ -1,3 +1,3 @@
-# LIFX for mac
+# phosx for mac
 
 ![Preview](Preview.png)
