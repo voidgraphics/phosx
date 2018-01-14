@@ -18,6 +18,7 @@ const winURL = process.env.NODE_ENV === 'development'
 function createTouchbar() {
   let colorPicker = new TouchBarColorPicker({
     change(color) {
+      console.log(color)
       mainWindow.webContents.send('color-picker', color)
     }
   })
@@ -34,6 +35,7 @@ function createTouchbar() {
   touchbar = new TouchBar([
     colorPicker, brightnessSlider
   ])
+  console.log(touchbar)
 }
 
 function createWindow () {

@@ -56,14 +56,10 @@
     mounted() {
       this.token = localStorage.getItem('token');
       window.addEventListener('refresh', () => this.refreshData())
-      ipcRenderer.on('color-picker', (e, color) => {
-        this.color = color
-        this.changeColor(color, this.brightness)
-      })
-      ipcRenderer.on('brightness', (e, brightness) => {
-        this.brightness = brightness
-        this.changeColor(null, this.brightness)
-      })
+      let throttleColor = throttle(this.updateColor, 600)
+      ipcRenderer.on('color-picker', throttleColor)
+      let throttleBrightness = throttle(this.updateBrightness, 600)
+      ipcRenderer.on('brightness', throttleBrightness)
       if(this.token) {
         this.refreshData()
         this.getScenes()
@@ -112,18 +108,28 @@
         })
       },
 
+      updateBrightness(e, brightness) {
+        this.brightness = brightness
+        this.changeColor(null, this.brightness)
+      },
+
+      updateColor(e, color) {
+        console.log(e, color)
+        this.color = color
+        this.changeColor(color, this.brightness)
+      },
+
       changeColor(color, brightness) {
-        throttle(() => {
-          this.$http({
-            method: 'put',
-            url: 'https://api.lifx.com/v1/lights/all/state',
-            headers: this.authHeader,
-            data: { color, brightness }
-          })
-          .then((response) => {
-            this.refreshData()
-          })
-        }, 300)
+        console.log('changing', color)
+        this.$http({
+          method: 'put',
+          url: 'https://api.lifx.com/v1/lights/all/state',
+          headers: this.authHeader,
+          data: { color, brightness }
+        })
+        .then((response) => {
+          this.refreshData()
+        })
       },
 
       navigateToLifxCloud() {
